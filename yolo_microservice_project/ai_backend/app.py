@@ -1,12 +1,15 @@
+import os
+import shutil
+
 from fastapi import FastAPI, File, UploadFile
 from fastapi.responses import JSONResponse
 from ultralytics import YOLO
-import shutil, os
 
 app = FastAPI()
 model = YOLO("model/best.pt")
 OUTPUT_DIR = "../output"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
+
 
 @app.post("/predict/")
 async def predict(file: UploadFile = File(...)):
@@ -17,10 +20,12 @@ async def predict(file: UploadFile = File(...)):
     detections = []
     for r in results:
         for box in r.boxes:
-            detections.append({
-                "bbox": box.xyxy[0].tolist(),
-                "class_id": int(box.cls[0]),
-                "class_name": model.names[int(box.cls[0])],
-                "confidence": float(box.conf[0])
-            })
+            detections.append(
+                {
+                    "bbox": box.xyxy[0].tolist(),
+                    "class_id": int(box.cls[0]),
+                    "class_name": model.names[int(box.cls[0])],
+                    "confidence": float(box.conf[0]),
+                }
+            )
     return JSONResponse({"image": file.filename, "detections": detections})
